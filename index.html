@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Actividad: Conflictos de Interés</title>
+<style>
+:root{
+  --bg:#f4f7fb;--card:#fff;--text:#172033;--muted:#64748b;
+  --primary:#2563eb;--primary-dark:#1d4ed8;--border:#dbe3ef;
+  --good:#15803d;--good-bg:#ecfdf3;--bad:#b91c1c;--bad-bg:#fef2f2;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.container{width:min(760px,92%);margin:35px auto}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:25px;box-shadow:0 8px 25px rgba(15,23,42,.07)}
+header{text-align:center;margin-bottom:20px}
+h1{margin:0 0 8px;font-size:clamp(25px,5vw,36px)}
+.subtitle{color:var(--muted);line-height:1.5}
+.top{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+.badge{background:#eff6ff;color:#1d4ed8;padding:8px 12px;border-radius:999px;font-weight:bold;font-size:14px}
+.progress{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden;margin:18px 0}
+.bar{height:100%;background:var(--primary);width:0%;transition:.3s}
+.question{font-size:20px;line-height:1.55;font-weight:bold;margin:25px 0 18px}
+.option{display:block;width:100%;padding:15px;margin:10px 0;border:2px solid var(--border);border-radius:12px;background:white;color:var(--text);font-size:16px;text-align:left;cursor:pointer;transition:.15s}
+.option:hover:not(:disabled){border-color:var(--primary);background:#f8fbff}
+.option:disabled{cursor:default}
+.option.correct{border-color:var(--good);background:var(--good-bg);color:var(--good)}
+.option.wrong{border-color:var(--bad);background:var(--bad-bg);color:var(--bad)}
+.feedback{min-height:50px;margin-top:18px;padding:13px;border-radius:10px;line-height:1.5;font-size:15px}
+.feedback:empty{display:none}
+.feedback.ok{background:var(--good-bg);color:var(--good)}
+.feedback.no{background:var(--bad-bg);color:var(--bad)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+button.action{border:0;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:bold;cursor:pointer}
+.next{background:var(--primary);color:#fff}
+.next:hover{background:var(--primary-dark)}
+.next:disabled{opacity:.45;cursor:not-allowed}
+.restart{background:#e2e8f0;color:#172033}
+.result{text-align:center;padding:25px}
+.result h2{margin-top:0}
+.score{font-size:40px;font-weight:bold;color:var(--primary)}
+.hidden{display:none}
+footer{text-align:center;color:var(--muted);font-size:13px;margin-top:18px}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>Actividad: Conflictos de Interés</h1>
+<div class="subtitle">Lee cada situación y clasifícala como <b>Real</b>, <b>Potencial</b> o <b>Aparente</b>.</div>
+</header>
+
+<div class="card" id="quizCard">
+  <div class="top">
+    <span class="badge" id="counter">Situación 1 de 15</span>
+    <strong id="score">Puntos: 0</strong>
+  </div>
+  <div class="progress"><div class="bar" id="bar"></div></div>
+
+  <div class="question" id="question"></div>
+  <div id="options"></div>
+  <div class="feedback" id="feedback" aria-live="polite"></div>
+
+  <div class="actions">
+    <button class="action next" id="next" disabled>Siguiente</button>
+    <button class="action restart" id="restart">Reiniciar</button>
+  </div>
+</div>
+
+<div class="card result hidden" id="result">
+  <h2>¡Actividad terminada!</h2>
+  <div class="score" id="finalScore"></div>
+  <p id="finalMessage"></p>
+  <button class="action next" id="again">Intentar nuevamente</button>
+</div>
+
+<footer>Actividad educativa · Conflictos de interés</footer>
+</div>
+
+<script>
+const situations = [
+ {q:"Compras software de tu hermano más caro sin licitación.",a:"real",e:"Existe una relación familiar y un beneficio económico que puede afectar directamente la decisión."},
+ {q:"Usas acceso de administrador del banco para ver el saldo de tu ex.",a:"real",e:"Existe un interés personal y se utiliza un acceso profesional para obtener información privada."},
+ {q:"Apruebas una tesis con evidente plagio de tu primo por presión familiar.",a:"real",e:"El parentesco y la presión familiar intervienen directamente en una decisión profesional."},
+ {q:"Copias códigos de tu empresa para tu app personal competidora.",a:"real",e:"Existe un beneficio personal y un conflicto directo con los intereses de la empresa."},
+ {q:"Trabajas para Coca y Pepsi en el mismo sistema sin avisar.",a:"real",e:"Tienes responsabilidades con empresas competidoras y no informas la situación."},
+ {q:"Contratas un proveedor de hosting donde tienes acciones ocultas.",a:"real",e:"Existe un interés económico directo en el proveedor que estás seleccionando."},
+ {q:"Aceptas un iPhone de un proveedor durante una licitación.",a:"real",e:"El regalo crea un interés personal que puede comprometer la imparcialidad de la decisión."},
+ {q:"Como perito dictaminas a favor de quien te prometió algo.",a:"real",e:"Existe un beneficio prometido que afecta directamente la imparcialidad del dictamen."},
+ {q:"Usas servidores de la universidad para minar criptomonedas para ti.",a:"real",e:"Se utilizan recursos institucionales para obtener un beneficio personal."},
+ {q:"Inflas una cotización para favorecer a la empresa de tu socio.",a:"real",e:"La relación con el socio y el beneficio económico están directamente relacionados con la decisión."},
+ {q:"Apruebas software fraudulento de emisiones por miedo a ser despedido.",a:"potencial",e:"La presión laboral puede generar un conflicto entre la responsabilidad profesional y el interés de conservar el empleo. Si se materializa la decisión, puede pasar a ser un conflicto real."},
+ {q:"Recomiendas un antivirus solo por comisión sin informar sus deficiencias.",a:"real",e:"Existe un beneficio económico personal y se omite información relevante."},
+ {q:"Tienes dos trabajos con permiso de tus jefes y con diferente giro comercial.",a:"aparente",e:"Puede generar dudas sobre un posible conflicto, aunque los empleos están autorizados y son de diferente giro."},
+ {q:"Rechazas un proyecto por falta de competencia y recomiendas a otro profesional.",a:"aparente",e:"Una recomendación podría parecer un conflicto si no se conoce la razón, aunque la situación descrita presenta una justificación profesional."},
+ {q:"Publicas una crítica académica con datos públicos y sin interés económico.",a:"aparente",e:"Puede cuestionarse la imparcialidad de una crítica, pero no se indica un interés personal o económico que la afecte."}
+];
+
+const labels={real:"Real",potencial:"Potencial",aparente:"Aparente"};
+let current=0, score=0, answered=false;
+
+const $=id=>document.getElementById(id);
+const question=$("question"), options=$("options"), feedback=$("feedback");
+const next=$("next"), restart=$("restart"), again=$("again");
+const counter=$("counter"), scoreEl=$("score"), bar=$("bar");
+
+function render(){
+  answered=false;
+  next.disabled=true;
+  feedback.className="feedback";
+  feedback.textContent="";
+  const s=situations[current];
+  question.textContent=s.q;
+  counter.textContent=`Situación ${current+1} de ${situations.length}`;
+  scoreEl.textContent=`Puntos: ${score}`;
+  bar.style.width=`${current/situations.length*100}%`;
+  options.innerHTML="";
+  ["real","potencial","aparente"].forEach(type=>{
+    const btn=document.createElement("button");
+    btn.className="option";
+    btn.type="button";
+    btn.textContent=labels[type];
+    btn.addEventListener("click",()=>answer(type,btn));
+    options.appendChild(btn);
+  });
+}
+
+function answer(type,clicked){
+  if(answered)return;
+  answered=true;
+  next.disabled=false;
+  const correct=situations[current].a;
+  [...options.children].forEach(btn=>{
+    btn.disabled=true;
+    if(btn.textContent===labels[correct])btn.classList.add("correct");
+  });
+  if(type===correct){
+    score++;
+    clicked.classList.add("correct");
+    feedback.className="feedback ok";
+    feedback.textContent="✓ Correcto. "+situations[current].e;
+  }else{
+    clicked.classList.add("wrong");
+    feedback.className="feedback no";
+    feedback.textContent="✗ Clasificación incorrecta. "+situations[current].e;
+  }
+  scoreEl.textContent=`Puntos: ${score}`;
+}
+
+function finish(){
+  $("quizCard").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  const pct=Math.round(score/situations.length*100);
+  $("finalScore").textContent=`${score} / ${situations.length}`;
+  $("finalMessage").textContent=`Obtuviste ${pct}%. Presiona “Intentar nuevamente” para repetir la actividad.`;
+}
+
+next.addEventListener("click",()=>{
+  if(!answered)return;
+  if(current<situations.length-1){current++;render();}
+  else{bar.style.width="100%";finish();}
+});
+
+function reset(){
+  current=0;score=0;
+  $("quizCard").classList.remove("hidden");
+  $("result").classList.add("hidden");
+  render();
+}
+restart.addEventListener("click",reset);
+again.addEventListener("click",reset);
+render();
+</script>
+</body>
+</html>
